@@ -122,38 +122,58 @@ void merge_telemetry(double **telemetries,
                      int &global_telemetry_current_size,
                      int &global_telemetry_max_size) {
 
+  int pointers[tot_telemetries] ; //in each pointer we are recording which time coordinate we are at
+  for (int i=0 ; i<tot_telemetries ; i++){
+    pointers[i]=0; // initialize the pointer at 0
+  } // check that no pb of pointesr/values here
+
   int expected = 0 ; // expected value of global_telemetry_max_size
   for (int i=0;i<tot_telemetries;i++){
     expected += telemetries_sizes[i];
   }
 
-  int pointers[tot_telemetries] ; //in each pointer we are recording which time coordinate we are at
-  for (int i=0;i<tot_telemetries;i++){
-    *(pointers+i)=0;
-  }
-
+  double min_t = -1; //we are going to be looking for the smallest time thus we need a reference for comparison
+  int min_telemetry = -1;
 
   while (global_telemetry_current_size != expected){ //while all coordinates have not been merged in global_telemetry
 
-    double min_t = -1; //we are going to be looking for the smallest time thus we need a reference for comparison
-    int min_telemetry = -1;
+    min_t = -1;
+    min_telemetry = -1;
 
-    for (int i=0;i<tot_telemetries;i++) {
+    for (int i=0 ; i<tot_telemetries ; i++) { //i design the index of each telemetry in telemetries, we go through each index
 
-      if (telemetries[i][*(pointers+i)]<min_t){
-          min_t = telemetries[i][pointers[i]]; //we keep track of the telemetry with the smallest time
-          min_telemetry = i ;
+      if (pointers[i]>=telemetries_sizes[i]){
+          continue;
       }
-    }
-//we have the telemetry of indice min_telemetry in telemetries with the smallest time
-    global_telemetry = append_to_array(telemetries[min_telemetry][pointers[min_telemetry]],global_telemetry,global_telemetry_current_size,global_telemetry_max_size);
-    global_telemetry = append_to_array(telemetries[min_telemetry][pointers[min_telemetry]+1],global_telemetry,global_telemetry_current_size,global_telemetry_max_size);
-    global_telemetry = append_to_array(telemetries[min_telemetry][pointers[min_telemetry]+2],global_telemetry,global_telemetry_current_size,global_telemetry_max_size);
-    //remark that global_telemetry_max_size increases by 3
-    *(pointers+min_telemetry) = *(pointers+min_telemetry)+3; //in the telemetry with the smallest time, we move the pointer to the next point
 
-    global_telemetry += 1;
+      else {
+          double time = telemetries[i][pointers[i]] ;
+
+          if (min_t == double(-1)){
+              min_t = time ;
+              min_telemetry = i;
+          }
+
+          else if (time < min_t){ //i-th telemetry
+              min_t = time; //we keep track of the telemetry with the smallest time
+              min_telemetry = i ;
+          }
+      }
+
+
+    }
+
+    if (min_telemetry != -1) {
+      global_telemetry = append_to_array(telemetries[min_telemetry][pointers[min_telemetry]],global_telemetry,global_telemetry_current_size,global_telemetry_max_size);
+      global_telemetry = append_to_array(telemetries[min_telemetry][pointers[min_telemetry]+1],global_telemetry,global_telemetry_current_size,global_telemetry_max_size);
+      global_telemetry = append_to_array(telemetries[min_telemetry][pointers[min_telemetry]+2],global_telemetry,global_telemetry_current_size,global_telemetry_max_size);
+      //remark that global_telemetry_max_size increases by 3
+      pointers[min_telemetry] += 3; //in the telemetry with the smallest time, we move the pointer to the next point // pointers working
+    }
+
+
   }
 
-}
 
+
+}
